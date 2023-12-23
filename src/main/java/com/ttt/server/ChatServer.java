@@ -4,8 +4,7 @@ import com.ttt.message.LoginRequestMessage;
 import com.ttt.message.LoginResponseMessage;
 import com.ttt.protocol.MessageCodecSharable;
 import com.ttt.protocol.ProtocolFrameDecoder;
-import com.ttt.server.handler.ChatRequestMessageHandler;
-import com.ttt.server.handler.LoginRequestMessageHandler;
+import com.ttt.server.handler.*;
 import com.ttt.server.service.UserServiceFactory;
 import com.ttt.server.session.SessionFactory;
 import io.netty.bootstrap.ServerBootstrap;
@@ -36,6 +35,12 @@ public class ChatServer {
         MessageCodecSharable MESSAGE_CODEC = new MessageCodecSharable();
         LoginRequestMessageHandler LOGIN_HANDLER = new LoginRequestMessageHandler();
         ChatRequestMessageHandler CHAT_HANDLER = new ChatRequestMessageHandler();
+        GroupCreateRequestMessageHandler GROUP_CREATE_HANDLER = new GroupCreateRequestMessageHandler();
+        GroupJoinRequestMessageHandler GROUP_JOIN_HANDLER = new GroupJoinRequestMessageHandler();
+        GroupMembersRequestMessageHandler GROUP_MEMBERS_HANDLER = new GroupMembersRequestMessageHandler();
+        GroupChatRequestMessageHandler GROUP_CHAT_HANDLER = new GroupChatRequestMessageHandler();
+        GroupQuitRequestMessageHandler GROUP_QUIT_HANDLER = new GroupQuitRequestMessageHandler();
+        QuitHandler QUIT_HANDLER = new QuitHandler();
         ServerBootstrap serverBootstrap = new ServerBootstrap();
         serverBootstrap.channel(NioServerSocketChannel.class);
         serverBootstrap.group(boss, worker);
@@ -44,20 +49,26 @@ public class ChatServer {
             @Override
             protected void initChannel(SocketChannel ch) throws Exception {
                 ch.pipeline().addLast(new ProtocolFrameDecoder());
-                ch.pipeline().addLast(LOGGING_HANDLER);
+//                ch.pipeline().addLast(LOGGING_HANDLER);
                 ch.pipeline().addLast(MESSAGE_CODEC);
                 ch.pipeline().addLast(new ChannelInboundHandlerAdapter(){
                     @Override
                     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+                        logger.info("读取到的数据msg>>>{}",msg);
                         super.channelRead(ctx, msg);
-                        ByteBuf buf = (ByteBuf) msg;
-                        logger.info("读取到的数据>>>{}",buf);
-
                     }
                 });
                 // deal about login logic
                 ch.pipeline().addLast(LOGIN_HANDLER);
+                // chat
                 ch.pipeline().addLast(CHAT_HANDLER);
+                // group chat
+                ch.pipeline().addLast(GROUP_CREATE_HANDLER);
+                ch.pipeline().addLast(GROUP_JOIN_HANDLER);
+                ch.pipeline().addLast(GROUP_MEMBERS_HANDLER);
+                ch.pipeline().addLast(GROUP_QUIT_HANDLER);
+                ch.pipeline().addLast(GROUP_CHAT_HANDLER);
+                ch.pipeline().addLast(QUIT_HANDLER);
             }
         });
         Channel channel = null;

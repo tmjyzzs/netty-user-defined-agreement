@@ -1,8 +1,6 @@
 package com.ttt.client;
 
-import com.ttt.message.ChatRequestMessage;
-import com.ttt.message.LoginRequestMessage;
-import com.ttt.message.LoginResponseMessage;
+import com.ttt.message.*;
 import com.ttt.protocol.MessageCodecSharable;
 import com.ttt.protocol.ProtocolFrameDecoder;
 import io.netty.bootstrap.Bootstrap;
@@ -41,7 +39,7 @@ public class ChatClient {
             @Override
             protected void initChannel(SocketChannel ch) {
                 ch.pipeline().addLast(new ProtocolFrameDecoder());
-                ch.pipeline().addLast(LOGGING_HANDLER);
+//                ch.pipeline().addLast(LOGGING_HANDLER);
                 ch.pipeline().addLast(MESSAGE_CODEC);
                 ch.pipeline().addLast("client handler", new ChannelInboundHandlerAdapter() {
                     @Override
@@ -103,23 +101,23 @@ public class ChatClient {
                                     case "send":
                                         ctx.writeAndFlush(new ChatRequestMessage(username, s[1], s[2]));
                                         break;
-//                                    case "gsend":
-//                                        ctx.writeAndFlush(new GroupChatRequestMessage(username, s[1], s[2]));
-//                                        break;
-//                                    case "gcreate":
-//                                        Set<String> set = new HashSet<>(Arrays.asList(s[2].split(",")));
-//                                        set.add(username); // 加入自己
-//                                        ctx.writeAndFlush(new GroupCreateRequestMessage(s[1], set));
-//                                        break;
-//                                    case "gmembers":
-//                                        ctx.writeAndFlush(new GroupMembersRequestMessage(s[1]));
-//                                        break;
-//                                    case "gjoin":
-//                                        ctx.writeAndFlush(new GroupJoinRequestMessage(username, s[1]));
-//                                        break;
-//                                    case "gquit":
-//                                        ctx.writeAndFlush(new GroupQuitRequestMessage(username, s[1]));
-//                                        break;
+                                    case "gsend":
+                                        ctx.writeAndFlush(new GroupChatRequestMessage(username, s[1], s[2]));
+                                        break;
+                                    case "gcreate":
+                                        Set<String> set = new HashSet<>(Arrays.asList(s[2].split(",")));
+                                        set.add(username); // 加入自己
+                                        ctx.writeAndFlush(new GroupCreateRequestMessage(s[1], set));
+                                        break;
+                                    case "gmembers":
+                                        ctx.writeAndFlush(new GroupMembersRequestMessage(s[1]));
+                                        break;
+                                    case "gjoin":
+                                        ctx.writeAndFlush(new GroupJoinRequestMessage(username, s[1]));
+                                        break;
+                                    case "gquit":
+                                        ctx.writeAndFlush(new GroupQuitRequestMessage(username, s[1]));
+                                        break;
                                     case "quit":
                                         ctx.channel().close();
                                         return;

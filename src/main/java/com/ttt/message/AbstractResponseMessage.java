@@ -3,6 +3,9 @@ package com.ttt.message;
 import lombok.Data;
 import lombok.ToString;
 
+/**
+ * @author ttt
+ */
 @Data
 @ToString(callSuper = true)
 public abstract class AbstractResponseMessage extends Message {

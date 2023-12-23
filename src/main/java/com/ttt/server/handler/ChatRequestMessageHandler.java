@@ -9,7 +9,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 
 /**
- * Description TODO
+ * Description chat logic send msg
  * DATA 2023-12-23
  *
  * @Author ttt
