@@ -4,7 +4,10 @@ import com.ttt.message.LoginRequestMessage;
 import com.ttt.message.LoginResponseMessage;
 import com.ttt.protocol.MessageCodecSharable;
 import com.ttt.protocol.ProtocolFrameDecoder;
+import com.ttt.server.handler.ChatRequestMessageHandler;
+import com.ttt.server.handler.LoginRequestMessageHandler;
 import com.ttt.server.service.UserServiceFactory;
+import com.ttt.server.session.SessionFactory;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;
@@ -31,7 +34,8 @@ public class ChatServer {
         NioEventLoopGroup worker = new NioEventLoopGroup();
         LoggingHandler LOGGING_HANDLER = new LoggingHandler(LogLevel.DEBUG);
         MessageCodecSharable MESSAGE_CODEC = new MessageCodecSharable();
-
+        LoginRequestMessageHandler LOGIN_HANDLER = new LoginRequestMessageHandler();
+        ChatRequestMessageHandler CHAT_HANDLER = new ChatRequestMessageHandler();
         ServerBootstrap serverBootstrap = new ServerBootstrap();
         serverBootstrap.channel(NioServerSocketChannel.class);
         serverBootstrap.group(boss, worker);
@@ -39,34 +43,21 @@ public class ChatServer {
 
             @Override
             protected void initChannel(SocketChannel ch) throws Exception {
-//                ch.pipeline().addLast(new ProtocolFrameDecoder());
+                ch.pipeline().addLast(new ProtocolFrameDecoder());
                 ch.pipeline().addLast(LOGGING_HANDLER);
                 ch.pipeline().addLast(MESSAGE_CODEC);
                 ch.pipeline().addLast(new ChannelInboundHandlerAdapter(){
                     @Override
                     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+                        super.channelRead(ctx, msg);
                         ByteBuf buf = (ByteBuf) msg;
                         logger.info("读取到的数据>>>{}",buf);
-                        super.channelRead(ctx, msg);
-                    }
-                });
-                ch.pipeline().addLast(new SimpleChannelInboundHandler<LoginRequestMessage>() {
-                    @Override
-                    protected void channelRead0(ChannelHandlerContext ctx, LoginRequestMessage msg) throws Exception {
-                        logger.info("接收到的消息",msg);
-                        String username = msg.getUsername();
-                        String password = msg.getPassword();
-                        boolean login = UserServiceFactory.getUserService().login(username, password);
 
-                        LoginResponseMessage message;
-                        if(login) {
-                            message = new LoginResponseMessage(true, "登录成功");
-                        } else {
-                            message = new LoginResponseMessage(false, "用户名或密码不正确");
-                        }
-                        ctx.writeAndFlush(message);
                     }
                 });
+                // deal about login logic
+                ch.pipeline().addLast(LOGIN_HANDLER);
+                ch.pipeline().addLast(CHAT_HANDLER);
             }
         });
         Channel channel = null;
