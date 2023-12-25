@@ -9,7 +9,12 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
+/**
+ * @author ttt
+ */
 public class GroupSessionMemoryImpl implements GroupSession {
+
+    // management group user  one group name to many user
     private final Map<String, Group> groupMap = new ConcurrentHashMap<>();
 
     @Override

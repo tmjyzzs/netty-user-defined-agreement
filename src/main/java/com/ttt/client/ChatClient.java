@@ -3,6 +3,7 @@ package com.ttt.client;
 import com.ttt.message.*;
 import com.ttt.protocol.MessageCodecSharable;
 import com.ttt.protocol.ProtocolFrameDecoder;
+import com.ttt.server.handler.PingMessage;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;
@@ -11,6 +12,9 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
+import io.netty.handler.timeout.IdleState;
+import io.netty.handler.timeout.IdleStateEvent;
+import io.netty.handler.timeout.IdleStateHandler;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.*;
@@ -39,8 +43,23 @@ public class ChatClient {
             @Override
             protected void initChannel(SocketChannel ch) {
                 ch.pipeline().addLast(new ProtocolFrameDecoder());
-//                ch.pipeline().addLast(LOGGING_HANDLER);
                 ch.pipeline().addLast(MESSAGE_CODEC);
+                // 用来判断是不是 读空闲时间过长，或 写空闲时间过长
+                // 3s 内如果没有向服务器写数据，会触发一个 IdleState#WRITER_IDLE 事件
+                ch.pipeline().addLast(new IdleStateHandler(0, 3, 0));
+                // ChannelDuplexHandler 可以同时作为入站和出站处理器
+                ch.pipeline().addLast(new ChannelDuplexHandler() {
+                    // 用来触发特殊事件
+                    @Override
+                    public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception{
+                        IdleStateEvent event = (IdleStateEvent) evt;
+                        // 触发了写空闲事件
+                        if (event.state() == IdleState.WRITER_IDLE) {
+                            log.debug("3s 没有写数据了，发送一个心跳包");
+                            ctx.writeAndFlush(new PingMessage());
+                        }
+                    }
+                });
                 ch.pipeline().addLast("client handler", new ChannelInboundHandlerAdapter() {
                     @Override
                     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
@@ -69,8 +88,6 @@ public class ChatClient {
                             String password = scanner.nextLine();
                             // 构造消息对象
                             LoginRequestMessage message = new LoginRequestMessage(username, password);
-//                            ByteBuf buffer = ctx.alloc().buffer();
-//                            buffer.writeBytes("nihao".getBytes());
                             // 发送消息
                             ctx.writeAndFlush(message);
                             System.out.println("等待后续操作...");

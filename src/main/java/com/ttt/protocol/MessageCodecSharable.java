@@ -15,7 +15,8 @@ import java.io.ObjectOutputStream;
 import java.util.List;
 
 /**
- * Description TODO
+ * Description netty encode decode
+ * encode the data in the channel
  * DATA 2023-12-22
  *
  * @Author ttt

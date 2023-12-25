@@ -6,7 +6,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Description TODO
+ * Description user channel unification management
  * DATA 2023-12-23
  *
  * @Author ttt

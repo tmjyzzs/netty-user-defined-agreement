@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 
 /**
  * @author ttt
+ * about quit and exception handler
  */
 @Slf4j
 @ChannelHandler.Sharable

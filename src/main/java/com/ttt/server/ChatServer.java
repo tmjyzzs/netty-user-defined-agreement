@@ -15,6 +15,10 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
+import io.netty.handler.timeout.IdleState;
+import io.netty.handler.timeout.IdleStateEvent;
+import io.netty.handler.timeout.IdleStateHandler;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,6 +28,7 @@ import org.slf4j.LoggerFactory;
  *
  * @Author ttt
  */
+@Slf4j
 public class ChatServer {
 
     private static final Logger logger = LoggerFactory.getLogger(ChatServer.class);
@@ -51,11 +56,26 @@ public class ChatServer {
                 ch.pipeline().addLast(new ProtocolFrameDecoder());
 //                ch.pipeline().addLast(LOGGING_HANDLER);
                 ch.pipeline().addLast(MESSAGE_CODEC);
+
                 ch.pipeline().addLast(new ChannelInboundHandlerAdapter(){
                     @Override
                     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
                         logger.info("读取到的数据msg>>>{}",msg);
                         super.channelRead(ctx, msg);
+                    }
+                });
+                ch.pipeline().addLast(new IdleStateHandler(5, 0, 0));
+                // 可以同时作为入站和出站处理器
+                ch.pipeline().addLast(new ChannelDuplexHandler(){
+                    // 用来触发特殊事件
+                    @Override
+                    public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception{
+                        IdleStateEvent event = (IdleStateEvent) evt;
+                        // 触发了读空闲事件
+                        if (event.state() == IdleState.READER_IDLE) {
+                            log.info("已经 5s 没有读到数据了");
+                            ctx.channel().close();
+                        }
                     }
                 });
                 // deal about login logic
