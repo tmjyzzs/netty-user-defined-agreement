@@ -54,7 +54,7 @@ public class ChatServer {
             @Override
             protected void initChannel(SocketChannel ch) throws Exception {
                 ch.pipeline().addLast(new ProtocolFrameDecoder());
-//                ch.pipeline().addLast(LOGGING_HANDLER);
+                ch.pipeline().addLast(LOGGING_HANDLER);
                 ch.pipeline().addLast(MESSAGE_CODEC);
 
                 ch.pipeline().addLast(new ChannelInboundHandlerAdapter(){
@@ -64,7 +64,7 @@ public class ChatServer {
                         super.channelRead(ctx, msg);
                     }
                 });
-                ch.pipeline().addLast(new IdleStateHandler(5, 0, 0));
+                ch.pipeline().addLast(new IdleStateHandler(50, 0, 0));
                 // 可以同时作为入站和出站处理器
                 ch.pipeline().addLast(new ChannelDuplexHandler(){
                     // 用来触发特殊事件
@@ -73,7 +73,7 @@ public class ChatServer {
                         IdleStateEvent event = (IdleStateEvent) evt;
                         // 触发了读空闲事件
                         if (event.state() == IdleState.READER_IDLE) {
-                            log.info("已经 5s 没有读到数据了");
+                            log.info("已经 50s 没有读到数据了");
                             ctx.channel().close();
                         }
                     }
